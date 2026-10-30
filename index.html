@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mon Coach Forme">
+<title>Mon Coach Forme</title>
+<style>
+:root{--bg:#101827;--card:#1c293b;--muted:#a8b5c8;--green:#7cdda7;--white:#f5f7fb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif}
+header{padding:25px 20px 18px;background:#172438}
+header small{color:var(--green);font-weight:bold;letter-spacing:1px}
+h1{font-size:26px;margin:8px 0}
+h2{font-size:19px;margin:0 0 14px}
+main{max-width:700px;margin:auto;padding:18px}
+section{background:var(--card);border-radius:16px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:#26364c;border-radius:12px;padding:13px}
+.metric small{display:block;color:var(--muted);margin-bottom:8px}
+.metric strong{font-size:23px}
+p{color:var(--muted);line-height:1.5}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #46566d;border-radius:9px;background:#101b2b;color:white;font-size:16px}
+button{border:0;border-radius:10px;background:var(--green);color:#10221a;font-weight:bold;padding:12px 16px;font-size:15px;cursor:pointer;margin-top:12px}
+button.secondary{background:#34465e;color:white}
+button.danger{background:#773e48;color:white}
+.full{width:100%}
+.item{padding:12px 0;border-bottom:1px solid #39475a}
+.item:last-child{border:0}
+.item strong{display:block;margin-bottom:5px}
+.item small{color:var(--muted)}
+.check{display:flex;align-items:center;gap:10px}
+.check input{width:20px;height:20px}
+nav{display:flex;gap:8px;overflow-x:auto;padding:12px 18px;background:#172438}
+nav button{margin:0;white-space:nowrap;padding:9px 12px}
+.hidden{display:none}
+canvas{width:100%;height:180px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+</style>
+</head>
+<body>
+<header>
+<small>TON SUIVI PERSONNEL</small>
+<h1>Mon Coach Forme 💪</h1>
+<p style="margin:0">Progressivement, régulièrement, durablement.</p>
+</header>
+<nav>
+<button onclick="show('accueil')">Accueil</button>
+<button onclick="show('poids')">Mon poids</button>
+<button onclick="show('sport')">Mes séances</button>
+<button onclick="show('historique')">Historique</button>
+</nav>
+<main>
+<div id="accueil">
+<section>
+<h2>Mon bilan</h2>
+<div class="grid">
+<div class="metric"><small>Dernier poids</small><strong id="lastWeight">-- kg</strong></div>
+<div class="metric"><small>Évolution</small><strong id="change">--</strong></div>
+<div class="metric"><small>Séances enregistrées</small><strong id="sessions">0</strong></div>
+<div class="metric"><small>Course cumulée</small><strong id="distance">0 km</strong></div>
+</div>
+</section>
+<section>
+<h2>Mon programme hebdomadaire</h2>
+<p>Un programme indicatif à adapter à ta récupération et aux consignes de ton équipe médicale.</p>
+<div id="week"></div>
+</section>
+<section>
+<h2>Mon objectif</h2>
+<label>Poids cible (kg)</label>
+<input type="number" id="goal" step="0.1" placeholder="Ex : 82">
+<button onclick="saveGoal()">Enregistrer mon objectif</button>
+</section>
+</div>
+
+<div id="poids" class="hidden">
+<section>
+<h2>Enregistrer mon poids</h2>
+<label>Date</label><input type="date" id="weightDate">
+<label>Poids (kg)</label><input type="number" id="weightValue" step="0.1" placeholder="Ex : 88.5">
+<label>Tour de taille (cm) – facultatif</label><input type="number" id="waist" step="0.5">
+<button class="full" onclick="addWeight()">Enregistrer mon poids</button>
+</section>
+<section>
+<h2>Évolution du poids</h2>
+<canvas id="chart" width="600" height="180"></canvas>
+<p id="goalText"></p>
+</section>
+</div>
+
+<div id="sport" class="hidden">
+<section>
+<h2>Enregistrer une séance</h2>
+<label>Activité</label>
+<select id="activity">
+<option>Course à pied</option>
+<option>Vélo / ROUVY</option>
+<option>Padel</option>
+<option>Tennis</option>
+<option>Récupération</option>
+</select>
+<label>Date</label><input type="date" id="sportDate">
+<label>Durée (minutes)</label><input type="number" id="duration" placeholder="Ex : 40">
+<label>Distance (km) – facultatif</label><input type="number" id="km" step="0.1" placeholder="Ex : 7">
+<label>Commentaire</label><textarea id="notes" rows="3" placeholder="Sensations, parcours, énergie..."></textarea>
+<button class="full" onclick="addSport()">Enregistrer ma séance</button>
+</section>
+</div>
+
+<div id="historique" class="hidden">
+<section>
+<h2>Mes dernières séances</h2>
+<div id="sportHistory"></div>
+</section>
+<section>
+<h2>Mes pesées</h2>
+<div id="weightHistory"></div>
+</section>
+<section>
+<h2>Sauvegarder mes données</h2>
+<p>Exporte une copie de tes données pour les conserver.</p>
+<button class="full" onclick="exportData()">Exporter ma sauvegarde</button>
+<button class="secondary full" onclick="exportCSV()">Exporter en CSV</button>
+<button class="danger full" onclick="deleteData()">Effacer toutes mes données</button>
+</section>
+</div>
+<footer>Mon Coach Forme · Tes données restent sur cet appareil.</footer>
+</main>
+<script>
+const read=(key)=>JSON.parse(localStorage.getItem(key)||"[]");
+const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+const today=()=>new Date().toISOString().slice(0,10);
+document.getElementById("weightDate").value=today();
+document.getElementById("sportDate").value=today();
+
+const days=[
+["Lundi","Course facile","30 à 45 min"],
+["Mardi","Repos ou récupération","Selon tes sensations"],
+["Mercredi","Vélo / ROUVY","30 à 40 min tranquille"],
+["Jeudi","Repos","Récupération"],
+["Vendredi","Course facile","30 à 45 min"],
+["Samedi","Padel / Tennis ou repos","Selon ton activité"],
+["Dimanche","Vélo / ROUVY","35 à 45 min tranquille"]
+];
+
+function show(page){
+["accueil","poids","sport","historique"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==page));
+refresh();
+}
+function renderWeek(){
+document.getElementById("week").innerHTML=days.map((d,i)=>`
+<div class="item check">
+<input type="checkbox" id="day${i}" onchange="toggleDay(${i},this.checked)">
+<div><strong>${d[0]} – ${d[1]}</strong><small>${d[2]}</small></div>
+</div>`).join("");
+const checked=read("done");
+checked.forEach(i=>{const el=document.getElementById("day"+i);if(el)el.checked=true});
+}
+function toggleDay(i,value){
+let done=read("done");done=value?[...new Set([...done,i])]:done.filter(x=>x!==i);write("done",done);
+}
+function addWeight(){
+const value=Number(document.getElementById("weightValue").value);
+if(!value||value<30||value>300){alert("Entre un poids valide.");return}
+let data=read("weights");
+data.push({date:document.getElementById("weightDate").value||today(),weight:value,waist:document.getElementById("waist").value});
+write("weights",data);
+document.getElementById("weightValue").value="";
+document.getElementById("waist").value="";
+refresh();alert("Pesée enregistrée !");
+}
+function addSport(){
+const activity=document.getElementById("activity").value;
+const duration=Number(document.getElementById("duration").value);
+if(!duration||duration<1){alert("Indique la durée de ta séance.");return}
+let data=read("sports");
+data.push({date:document.getElementById("sportDate").value||today(),activity,duration,km:Number(document.getElementById("km").value)||0,notes:document.getElementById("notes").value});
+write("sports",data);
+["duration","km","notes"].forEach(id=>document.getElementById(id).value="");
+refresh();alert("Séance enregistrée !");
+}
+function saveGoal(){
+const value=Number(document.getElementById("goal").value);
+if(!value){alert("Indique un objectif valide.");return}
+localStorage.setItem("goal",value);refresh();alert("Objectif enregistré !");
+}
+function refresh(){
+const weights=read("weights").sort((a,b)=>a.date.localeCompare(b.date));
+const sports=read("sports").sort((a,b)=>b.date.localeCompare(a.date));
+const last=weights.at(-1);
+document.getElementById("lastWeight").textContent=last?last.weight+" kg":"-- kg";
+document.getElementById("change").textContent=weights.length>1?((last.weight-weights[0].weight)>0?"+":"")+(last.weight-weights[0].weight).toFixed(1)+" kg":"--";
+document.getElementById("sessions").textContent=sports.length;
+document.getElementById("distance").textContent=sports.filter(s=>s.activity==="Course à pied").reduce((a,s)=>a+s.km,0).toFixed(1)+" km";
+document.getElementById("goal").value=localStorage.getItem("goal")||"";
+document.getElementById("goalText").textContent=localStorage.getItem("goal")?"Objectif : "+localStorage.getItem("goal")+" kg":"Aucun objectif défini.";
+document.getElementById("sportHistory").innerHTML=sports.length?sports.map(s=>`<div class="item"><strong>${s.activity} · ${s.duration} min</strong><small>${s.date} · ${s.km?s.km+" km · ":""}${escapeHTML(s.notes)}</small></div>`).join(""):"<p>Aucune séance enregistrée.</p>";
+document.getElementById("weightHistory").innerHTML=weights.length?weights.slice().reverse().map(w=>`<div class="item"><strong>${w.weight} kg</strong><small>${w.date}${w.waist?" · Tour de taille : "+w.waist+" cm":""}</small></div>`).join(""):"<p>Aucune pesée enregistrée.</p>";
+drawChart(weights);
+}
+function escapeHTML(s){
+return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function drawChart(data){
+const c=document.getElementById("chart"),ctx=c.getContext("2d");
+ctx.clearRect(0,0,c.width,c.height);
+if(!data.length){ctx.fillStyle="#a8b5c8";ctx.font="18px Arial";ctx.fillText("Enregistre ton premier poids",150,90);return}
+const min=Math.min(...data.map(x=>x.weight))-1,max=Math.max(...data.map(x=>x.weight))+1;
+ctx.strokeStyle="#7cdda7";ctx.lineWidth=4;ctx.beginPath();
+data.forEach((p,i)=>{
+const x=data.length===1?300:25+i*550/(data.length-1);
+const y=155-(p.weight-min)/(max-min)*125;
+if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+});ctx.stroke();
+data.forEach((p,i)=>{
+const x=data.length===1?300:25+i*550/(data.length-1);
+const y=155-(p.weight-min)/(max-min)*125;
+ctx.fillStyle="#ffffff";ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+});
+}
+function exportData(){
+const content=JSON.stringify({weights:read("weights"),sports:read("sports"),goal:localStorage.getItem("goal"),done:read("done")},null,2);
+download("mon-coach-forme-sauvegarde.json",content,"application/json");
+}
+function exportCSV(){
+const rows=[["Date","Activité","Durée","Distance","Commentaire"],...read("sports").map(s=>[s.date,s.activity,s.duration,s.km,s.notes])];
+download("mes-seances.csv",rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(";")).join("\n"),"text/csv;charset=utf-8");
+}
+function download(name,content,type){
+const a=document.createElement("a"),url=URL.createObjectURL(new Blob([content],{type}));
+a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+}
+function deleteData(){
+if(!confirm("Effacer toutes les données de cette application ? Cette action est irréversible."))return;
+["weights","sports","goal","done"].forEach(k=>localStorage.removeItem(k));refresh();renderWeek();
+}
+renderWeek();refresh();
+</script>
+</body>
+</html>
